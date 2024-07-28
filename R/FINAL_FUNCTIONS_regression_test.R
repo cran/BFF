@@ -1,5 +1,5 @@
-################# T functions if r is an integer and equal to 1 (PNAS, not called)
-BFF_t_test_r1 = function(tau2, t_stat, df)
+################# T functions if r is an integer and equal to 1
+reg_t_val_r1 = function(tau2, t_stat, df)
 {
   r = 1 + t_stat ^ 2 / df
   s = 1 + t_stat ^ 2 / (df * (1 + tau2))
@@ -13,7 +13,7 @@ BFF_t_test_r1 = function(tau2, t_stat, df)
 }
 
 ####################### backend implementation (SPL, default)
-BFF_t_test = function(tau2, t_stat, df, r, two_sided)
+BFF_reg_test = function(tau2, t_stat, df, r, two_sided)
 {
 
   a = get_a(tau2=tau2, r=r)
@@ -30,9 +30,8 @@ BFF_t_test = function(tau2, t_stat, df, r, two_sided)
   return(to_return)
 }
 
-
 ####################### backend implementation
-backend_t <- function(
+backend_reg <- function(
     input,
     r,
     omega = NULL){
@@ -42,22 +41,18 @@ backend_t <- function(
   # corresponds a vector of tau2 for the corresponding t-statistics
   # i.e., tau2[omega][t-stat]
   tau2 <- lapply(omega, function(x){
-    if(input$one_sample){
-      tau2 <- get_one_sample_tau2(n = input$n, w = x, r = r)
-    }else{
-      tau2 <- get_two_sample_tau2(n1 = input$n1, n2 = input$n2, w = x, r = r)
-    }
+      tau2 <- get_regression_tau2(n = input$n, k = input$k, w = x, r = r)
   })
 
   # compute log_BF
   log_BF <- sapply(tau2, function(x){
     sum(sapply(seq_along(input$t_stat), function(i){
-      BFF_t_test(
+      BFF_reg_test(
         tau2 = x[i],
         t_stat    = input$t_stat[i],
         df = input$df[i],
         r = r,
-        two_sided = input$alternative == "two.sided"
+        two_sided = input$alternative.original == "two.sided"
       )
     }))
   })
@@ -77,19 +72,17 @@ backend_t <- function(
 
 ################# T function user interaction
 
-#' t_test_BFF
+#' regression_test_BFF
 #'
-#' t_test_BFF constructs BFFs based on the t test. BFFs depend on hyperparameters r and tau^2 which determine the shape and scale of the prior distributions which define the alternative hypotheses.
+#' regression_test_BFF constructs BFFs based on the t test. BFFs depend on hyperparameters r and tau^2 which determine the shape and scale of the prior distributions which define the alternative hypotheses.
 #' By setting r > 1, we use higher-order moments for replicated studies. Fractional moments are set with r > 1 and r not an integer.
 #' All results are on the log scale.
 #'
 #' @param t_stat T statistic
+#' @param alternative is the alternative a one.sided or two.sided test? default is two.sided
 #' @param n sample size (if one sample test)
-#' @param one_sample is test one sided? Default is FALSE
-#' @param alternative the alternative. options are "two.sided" or "less" or "greater"
-#' @param n1 sample size of group one for two sample test. Must be provided if one_sample = FALSE
-#' @param n2 sample size of group two for two sample test. Must be provided if one_sample = FALSE
-#' @param omega standardized effect size. For the t-test, this is often called Cohen's d (can be a single entry or a vector of values)
+#' @param k number of predictors
+#' @param omega standadized effect size. For the regression test, this is also known as Cohen's f^@ (can be a single entry or a vector of values)
 #' @param omega_sequence sequence of standardized effect sizes. If no omega is provided, omega_sequence is set to be seq(0.01, 1, by = 0.01)
 #' @param r variable controlling dispersion of non-local priors. Default is 1.
 #'
@@ -97,15 +90,14 @@ backend_t <- function(
 #' @export
 #'
 #' @examples
-#' tBFF = t_test_BFF(t_stat = 2.5, n = 50, one_sample = TRUE)
-#' tBFF
-#' plot(tBFF)
-t_test_BFF <- function(
+#' regBFF = regression_test_BFF(t_stat = 1.5, n = 50, k = 3)
+#' regBFF
+#' plot(regBFF)
+#'
+regression_test_BFF <- function(
     t_stat,
     n = NULL,
-    n1 = NULL,
-    n2 = NULL,
-    one_sample = FALSE,
+    k = NULL,
     alternative = "two.sided",
     omega = NULL,
     omega_sequence = if(is.null(omega)) seq(0.01, 1, by = 0.01),
@@ -113,15 +105,15 @@ t_test_BFF <- function(
 
 
   ### input checks and processing
-  input <- .process_input.t.test(t_stat, n, n1, n2, one_sample, alternative)
+  input <- .process_input.reg.test(t_stat, n, k, alternative)
 
   ### computation
   # calculate BF
-    results   <- backend_t(
-      input     = input,
-      r         = r,
-      omega     = if(!is.null(omega)) omega else omega_sequence
-    )
+  results   <- backend_reg(
+    input     = input,
+    r         = r,
+    omega     = if(!is.null(omega)) omega else omega_sequence
+  )
 
   ###### return logic
   if(is.null(omega)){
@@ -139,7 +131,7 @@ t_test_BFF <- function(
     log_bf       = this_log_bf,
     omega        = this_omega,
     omega_set    = !is.null(omega),
-    test_type    = "t_test",
+    test_type    = "regression_test",
     generic_test = FALSE,
     r            = r,
     input        = input
@@ -153,30 +145,11 @@ t_test_BFF <- function(
 }
 
 
-.process_input.t.test <- function(t_stat, n, n1, n2, one_sample, alternative){
+.process_input.reg.test <- function(t_stat, n, k, alternative){
 
   .check_alternative(alternative)
 
-  # one vs. two-sample test processing
-  if(one_sample){
-
-    if(is.null(t_stat) || is.null(n))
-      stop("Both t_stat and and n must be provided for one-sample (`one_sample = TRUE`) test.")
-    if(length(t_stat) != length(n))
-      stop("The input length of t_stat and n must be the same.")
-
-    df <- n - 1
-    .check_df(df, "(Total sample size must be greater than 2.)")
-  }else{
-
-    if(is.null(t_stat) || is.null(n1) || is.null(n2))
-      stop("Both t_stat, n1, and n2 must be provided for two-sample (`one_sample = FALSE`) test.")
-    if(length(t_stat) != length(n1) || length(t_stat) != length(n2))
-      stop("The input length of t_stat, n1, and n2 must be the same.")
-
-    df <- n1 + n2 - 2
-    .check_df(df, "(Total sample size must be greater than 3.)")
-  }
+  df <- n -k - 1
 
   # computation is implemented only for alternative = "two-sided" or "greater"
   # if lower, reverse the sign of t_stat, set alternative to "greater",
@@ -192,12 +165,9 @@ t_test_BFF <- function(
   return(list(
     t_stat     = t_stat,
     n          = n,
-    n1         = n1,
-    n2         = n2,
     df         = df,
-    one_sample = one_sample,
+    k = k,
     alternative          = alternative,
     alternative.original = alternative.original
   ))
 }
-

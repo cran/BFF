@@ -9,71 +9,37 @@ f_test_BFF(
   n,
   df1,
   df2,
-  savename = NULL,
-  maximize = FALSE,
-  r = 1,
-  tau2 = NULL,
-  save = TRUE,
-  xlab = NULL,
-  ylab = NULL,
-  main = NULL
+  omega = NULL,
+  omega_sequence = if (is.null(omega)) seq(0.01, 1, by = 0.01),
+  r = 1
 )
 }
 \arguments{
-\item{f_stat}{F statistic}
+\item{f_stat}{T statistic}
 
-\item{n}{sample size}
+\item{n}{sample size (if one sample test)}
 
-\item{df1}{first degree of freedom}
+\item{df1}{sample size of group one for two sample test.}
 
-\item{df2}{first degree of freedom}
+\item{df2}{sample size of group two for two sample test}
 
-\item{savename}{optional, filename for saving the pdf of the final plot}
+\item{omega}{standardized effect size. For the f-test, this is often called Cohen's f (can be a single entry or a vector of values)}
 
-\item{maximize}{should the function be maximzied over all possible r values? Default is FALSE. Only set to TRUE if analyzing multiple studies}
+\item{omega_sequence}{sequence of standardized effect sizes. If no omega is provided, omega_sequence is set to be seq(0.01, 1, by = 0.01)}
 
-\item{r}{r value}
-
-\item{tau2}{tau2 values (can be a single entry or a vector of values)}
-
-\item{save}{should a copy of the plot be saved?}
-
-\item{xlab}{optional, x label for plot}
-
-\item{ylab}{optional, y label for plot}
-
-\item{main}{optional, main label for plot}
+\item{r}{variable controlling dispersion of non-local priors. Default is 1.}
 }
 \value{
-Returns Bayes factor function results
- \tabular{ll}{
-   \code{BFF} \tab The log of the Bayes Factor Function values \cr
-   \tab \cr
-   \code{effect_size} \tab Effect sizes tested (seq(0, 1, by = 0.01)) \cr
-   \tab \cr
-   \code{BFF_max_RMSE} \tab Maximum BFF value \cr
-   \tab \cr
-   \code{max_RMSE} \tab Effect size that maximizes BFF\cr
-   \tab \cr
-   \code{tau2} \tab tau^2 values tested\cr
-}
+Returns an S3 object of class `BFF` (see `BFF.object` for details).
 }
 \description{
-f_test_BFF constructs BFFs based on the F test. BFFs depend on hyperparameters r and tau^2 which determine the shape and scale of the prior distributions which define the alternative hypotheses.
+f_test_BFF constructs BFFs based on the t test. BFFs depend on hyperparameters r and tau^2 which determine the shape and scale of the prior distributions which define the alternative hypotheses.
 By setting r > 1, we use higher-order moments for replicated studies. Fractional moments are set with r > 1 and r not an integer.
 All results are on the log scale.
-Plot saved to working directory unless a full path is specified in the 'savename' variable of the function.
 }
 \examples{
-fBFF = f_test_BFF(f_stat = 2.5, n = 50, df1 = 20, df2 = 48, save = FALSE)
-f_test_BFF(f_stat = 2.5, n = 50, df1 = 20, df2 = 48, save = FALSE, tau2 = 0.5)
-f_test_BFF(f_stat = 2.5, n = 50, df1 = 20, df2 = 48, save = FALSE, tau2 = c(0.5, 0.8))
-f_test_BFF(f_stat = 2.5, n = 50, df1 = 20, df2 = 48, r = 2, save = FALSE)
-f_test_BFF(f_stat = 2.5, n = 50, df1 = 20, df2 = 48, r = 2.5, save = FALSE)
-f_test_BFF(f_stat=2.5, n = 50, df1 = 20, df2 = 48, maximize = TRUE)
-f_test_BFF(f_stat=2.5, n = 50, df1 = 20, df2 = 48, maximize = TRUE, tau2 = 0.5)
-f_test_BFF(f_stat=2.5, n = 50, df1 = 20, df2 = 48, maximize = TRUE, tau2 = c(0.5, 0.8))
-fBFF$BFF_max_RMSE  # maximum BFF value
-fBFF$max_RMSE      # effect size which maximizes the BFF value
+fBFF = f_test_BFF(f_stat = 1.5, n = 50, df1 = 25, df2 = 48)
+fBFF
+plot(fBFF)
 
 }

@@ -1,8 +1,3 @@
-# rm(list = ls())
-# source("~/Desktop/Research/BFF/R/FINAL_SUPPORT_hypergeometric.R")
-# source("~/Desktop/Research/BFF/R/FINAL_FUNCTIONS_tau2.R")
-# source("~/Desktop/Research/BFF/R/FINAL_FUNCTIONS_plotting.R")
-# source("~/Desktop/Research/BFF/R/FINAL_support_functions.R")
 ################# Z functions if r is an integer and equal to 1
 z_val_r1 = function(tau2, z_stat)
 {
@@ -15,154 +10,67 @@ z_val_r1 = function(tau2, z_stat)
   return(to_return)
 }
 
-################# Z functions if r is an integer and greater than 1
-# sum_val_z = function(r, k, z, tau)
-# {
-#   # constructing third term of z statistic
-#   one = choose(2 * r, 2 * k)
-#   two = (tau * z / (1 + tau)) ^ (2 * k)
-#   three = (tau / (1 + tau)) ^ (r - k)
-#   four = double_factorial(2 * r - 2 * k - 1)
-#
-#   final_val = one * two * three * four
-#   return(final_val)
-# }
-#
-# sum_val_function_z = function(r, z, tau)
-# {
-#   val = 0
-#   for (kk in 0:r)
-#   {
-#     val = val + sum_val_z(r = r,
-#                           k = kk,
-#                           z = z,
-#                           tau = tau)
-#   }
-#   return(val)
-# }
-#
-# log_Z = function(z, r, tau)
-# {
-#   num1 = 1
-#   den1 = sqrt(1 + tau) * tau ^ (r) * double_factorial(2 * r - 1)
-#   first_term = num1 / den1
-#
-#   num2 = tau * z ^ 2
-#   den2 = 2 * (1 + tau)
-#   second_term = exp(num2 / den2)
-#
-#   third_term = sum_val_function_z(r = r, z = z, tau = tau)
-#
-#   to_return = first_term * second_term * third_term
-#
-#   # log version
-#   to_return = log(first_term) + log(second_term) + log(third_term)
-#   return(to_return)
-# }
-################# Z functions if r is a f raction
-log_Z_frac = function(tau2, z, r)
+####################### backend implementation (SPL, default)
+BFF_z_test = function(tau2, z_stat, r, two_sided)
 {
-  c = 1 / ((1 + tau2) ^ (r + 1 / 2))
 
-  third_term = tau2 * z ^ 2 / (2 * (1 + tau2))
-  hyper_term = hypergeom1F1(r + 1 / 2, 1 / 2, third_term)$f # is this log or not already?
+  a = get_a(tau2=tau2, r=r)
+  y = get_y_onesided_z_test(tau2=tau2, z=z_stat)
 
-  to_return = c * hyper_term
-  to_return = log(to_return)
 
-  return(to_return)
-}
-
-log_Z_frac_onesided = function(tau2, z, r)
-{
-  tau = sqrt(tau2)
-  c = 1 / ((1 + tau2) ^ (r + 1 / 2))
-  y = tau * z / sqrt(2 * (1 + tau2))
-
-  first_hyper = hypergeom1F1(r + 1 / 2, 1 / 2, y ^ 2)$f
-
-  gamma_term = sterling_gamma(r + 1) / sterling_gamma(r + 1 / 2)
-
-  second_hper = hypergeom1F1(r + 1, 3 / 2, y ^ 2)$f
-
-  to_return = c * (first_hyper + 2 * y * gamma_term * second_hper)
-  to_return = log(to_return)
-
+  if (two_sided) {
+    final_BF = a * hypergeom1F1(r + 1/2, 1/2, tau2 * z_stat^2 / (2 * (1 + tau2)) )$f
+  } else {
+    first_hypergeo = hypergeom1F1(r +1/2, 1/2, y^2)$f
+    second_hypergeo = hypergeom1F1(r + 1/2, 3/2, y^2)$f
+    const = 2 * y * gamma_approx(r+1) / gamma_approx(r + 1/2)
+    final_BF = a*(first_hypergeo + const*second_hypergeo)
+  }
+  to_return = log(final_BF)
   return(to_return)
 }
 
 
 ####################### backend implementation
-backend_z = function(r,
-                     z_stat,
-                     n,
-                     one_sample = TRUE,
-                     n1 = NULL,
-                     n2 = NULL,
-                     r1 = FALSE,
-                     tau2 = NULL)
+backend_z <- function(
+    input,
+    r,
+    omega = NULL){
 
-{
-  # same effect sizes for all tests
-  effect_size = seq(0.01, 1, by = 0.01)
-
-  user_supplied_tau2 = TRUE
-  if (is.null(tau2))
-    user_supplied_tau2 = FALSE
-
-  r1 = r1
-  frac_r = !r1
-
-  log_vals = rep(0, length(effect_size))
-  if (r1) {
-    if (one_sample)
-    {
-      if (!user_supplied_tau2)
-        tau2 = get_one_sample_tau2(n = n, w = effect_size)
-    } else {
-      if (!user_supplied_tau2)
-        tau2 = get_two_sample_tau2(n1 = n1, n2 = n2, w = effect_size)
+  # compute tau2 from omega
+  # if multiple omegas and t-stats are supplied, each element of tau2
+  # corresponds a vector of tau2 for the corresponding t-statistics
+  # i.e., tau2[omega][t-stat]
+  tau2 <- lapply(omega, function(x){
+    if(input$one_sample){
+      tau2 <- get_one_sample_tau2(n = input$n, w = x, r=r)
+    }else{
+      tau2 <- get_two_sample_tau2(n1 = input$n1, n2 = input$n2, w = x, r=r)
     }
-    log_vals = z_val_r1(tau2 = tau2, z_stat = z_stat)
-  }
+  })
 
-  if (frac_r) {
-    if (one_sample)
-    {
-      if (!user_supplied_tau2)
-        tau2 = get_one_sample_tau2(n = n, w = effect_size, r = r)
-      log_vals = log_Z_frac_onesided(z = z_stat,
-                                     r = r,
-                                     tau2 = tau2)
-    } else {
-      if (!user_supplied_tau2)
-        tau2 = get_two_sample_tau2(
-          n1 = n1,
-          n2 = n2,
-          w = effect_size,
-          r = r
-        )
-      log_vals = log_Z_frac(z = z_stat,
-                            r = r,
-                            tau2 = tau2)
-    }
-  }
-
-  # stuff to return
-  BFF = log_vals
+  # compute log_BF
+  log_BF <- sapply(tau2, function(x){
+    sum(sapply(seq_along(input$z_stat), function(i){
+      BFF_z_test(
+        tau2 = x[i],
+        z_stat    = input$z_stat[i],
+        r = r,
+        two_sided = input$alternative == "two.sided"
+      )
+    }))
+  })
 
   # check the results are finite
-  if (!all(is.finite(BFF)))
-  {
-    stop(
-      "Values entered produced non-finite numbers.
-      The most likely scenario is the evidence was so strongly in favor of the
-      alternative that there was numeric overflow. Please contact the maintainer for more information."
+  if (!all(is.finite(log_BF)))
+    warning(
+      "Values entered produced non-finite numbers for some effect sizes.
+      The most likely scenario is the evidence was so strongly in favor of the alternative that there was numeric overflow.
+      Only effect sizes with non-NaN values are kept in the plots.
+      Please contact the maintainer for more information."
     )
-  }
 
-  return(BFF)
-
+  return(log_BF)
 }
 
 
@@ -173,165 +81,123 @@ backend_z = function(r,
 #' z_test_BFF constructs BFFs based on the z test. BFFs depend on hyperparameters r and tau^2 which determine the shape and scale of the prior distributions which define the alternative hypotheses.
 #' By setting r > 1, we use higher-order moments for replicated studies. Fractional moments are set with r > 1 and r not an integer.
 #' All results are on the log scale.
-#' Plot saved to working directory unless a full path is specified in the 'savename' variable of the function.
 #'
-#' @param z_stat z statistic
+#' @param z_stat Z statistic
 #' @param n sample size (if one sample test)
-#' @param one_sample is test one sided? Default is TRUE
-#' @param n1 sample size of group one for two sample test
-#' @param n2 sample size of group two for two sample test
-#' @param savename optional, filename for saving the pdf of the final plot
-#' @param maximize Should the value of r be maximized? Default is FALSE. Only set to TRUE if analyzing multiple studies
-#' @param r r value
-#' @param tau2 tau2 values (can be a single entry or a vector of values)
-#' @param save should a copy of the plot be saved?
-#' @param xlab optional, x label for plot
-#' @param ylab optional, y label for plot
-#' @param main optional, main label for plot
+#' @param n1 sample size of group one for two sample test. Must be provided if one_sample = FALSE
+#' @param n2 sample size of group two for two sample test. Must be provided if one_sample = FALSE
+#' @param one_sample is test one sided? Default is FALSE
+#' @param alternative the alternative. options are "two.sided" or "less" or "greater"
+#' @param omega standardized effect size. For the z-test, this is often called Cohen's d (can be a single entry or a vector of values)
+#' @param omega_sequence sequence of standardized effect sizes. If no omega is provided, omega_sequence is set to be seq(0.01, 1, by = 0.01)
+#' @param r variable controlling dispersion of non-local priors. Default is 1.
 #'
-#' @return Returns Bayes factor function results
-#'  \tabular{ll}{
-#'    \code{BFF} \tab The log of the Bayes Factor Function values \cr
-#'    \tab \cr
-#'    \code{effect_size} \tab Effect sizes tested (seq(0, 1, by = 0.01)) \cr
-#'    \tab \cr
-#'    \code{BFF_max_RMSE} \tab Maximum BFF value \cr
-#'    \tab \cr
-#'    \code{max_RMSE} \tab Effect size that maximizes BFF\cr
-#'    \tab \cr
-#'    \code{tau2} \tab tau^2 values tested\cr
-#' }
+#' @return Returns an S3 object of class `BFF` (see `BFF.object` for details).
 #' @export
 #'
 #' @examples
-#' zBFF = z_test_BFF(z_stat = 2.5, n = 50, save = FALSE)
-#' z_test_BFF(z_stat = 2.5, n = 50, save = FALSE, tau2 = 0.5)
-#' z_test_BFF(z_stat = 2.5, n = 50, save = FALSE, tau2 = c(0.5, 0.8))
-#' z_test_BFF(z_stat = 2.5, n1 = 50, n2 = 35, one_sample = FALSE, save = FALSE) ##
-#' z_test_BFF(z_stat = 2.5, n = 50, r = 2, save = FALSE)
-#' z_test_BFF(z_stat = 2.5, r = 2, n1 = 50, n2 = 30, one_sample = FALSE, save = FALSE) ##
-#' z_test_BFF(z_stat = 2.5, n = 50, r = 2.5, save = FALSE)
-#' z_test_BFF(z_stat = 2.5, r = 2.5, n1 = 50, n2 = 30, one_sample = FALSE, save = FALSE) ##
-#' z_test_BFF(z_stat=2.5, n = 50, maximize = TRUE)
-#' z_test_BFF(z_stat=2.5, n = 50,  maximize = TRUE, tau2 = 0.5)
-#' z_test_BFF(z_stat=2.5, n = 50,  maximize = TRUE, tau2 = c(0.5, 0.8))
-#' zBFF$BFF_max_RMSE   # maximum BFF value
-#' zBFF$max_RMSE       # effect size which maximizes the BFF value
-#'
-z_test_BFF = function(z_stat,
-                      n = NULL,
-                      one_sample = TRUE,
-                      n1 = NULL,
-                      n2 = NULL,
-                      savename = NULL,
-                      maximize = FALSE,
-                      r = 1,
-                      tau2 = NULL,
-                      save = TRUE,
-                      xlab = NULL,
-                      ylab = NULL,
-                      main = NULL)
+#' zBFF = z_test_BFF(z_stat = 2.5, n = 50, one_sample = TRUE)
+#' zBFF
+#' plot(zBFF)
+
+z_test_BFF <- function(
+    z_stat,
+    n = NULL,
+    n1 = NULL,
+    n2 = NULL,
+    one_sample = FALSE,
+    alternative = "two.sided",
+    omega = NULL,
+    omega_sequence = if(is.null(omega)) seq(0.01, 1, by = 0.01),
+    r=1)
 
 {
-  if (is.null(n) &
-      (is.null(n1) &
-       is.null(n2)))
-    stop("Either n or n1 and n2 is required")
+  ### input checks and processing
+  input <- .process_input.z.test(z_stat, n, n1, n2, one_sample, alternative)
 
-  #####  same effect sizes for all tests
-  effect_size = seq(0.01, 1, by = 0.01)
-
-  ##### is tau2 supplied as an argument?
-  user_supplied_tau2 = TRUE
-  if (is.null(tau2))
-  {
-    user_supplied_tau2 = FALSE
-  }
-
-  #####  call results
-  r1 = FALSE
-  if (r == 1)
-    r1 = TRUE
-  results = backend_z(
-    z_stat = z_stat,
-    n = n,
-    one_sample = one_sample,
-    r = r,
-    tau2 = tau2,
-    r1 = r1,
-    n1 = n1,
-    n2 = n2
+  ### computation
+  # calculate BF
+  results   <- backend_z(
+    input     = input,
+    r         = r,
+    omega     = if(!is.null(omega)) omega else omega_sequence
   )
 
-  #####  plotting if tau2 is not specified
-  if (!user_supplied_tau2 && !maximize) {
-    bff_plot = c()
-    bff_plot[[1]] = results
-
-    plot_BFF(
-      effect_size = effect_size,
-      BFF = bff_plot,
-      save = save,
-      savename = savename,
-      xlab = xlab,
-      ylab = ylab,
-      main = main,
-      r = r
-    )
-  }
-
-
-  ##### optimzation logic
-  if (maximize)
-  {
-    if (is.null(tau2))
-      tau2 = seq(0, 1, 0.1)
-    optimal_r = vector(length = length(tau2))
-    count = 1
-    for (i in tau2)
-    {
-      optimal_r[count] = optimize(
-        backend_z,
-        c(1, 20),
-        tol = 0.001,
-        z_stat = z_stat,
-        n = n,
-        n1 = n1,
-        n2 = n2,
-        one_sample = one_sample,
-        r1 = FALSE,
-        tau2 = i,
-        maximum = TRUE
-      )$maximum
-      count = count + 1
-    }
-    maximized_values = as.data.frame(cbind(tau2, optimal_r))
-  }
-
   ###### return logic
-  BFF = results
-  effect_size = effect_size
-  idx_max = which.max(BFF)
-  BFF_max_RMSE = BFF[idx_max]
-  max_RMSE = effect_size[idx_max]
-
-  if (maximize) {
-    print(
-      "The maximum r value for each specified tau2 is given. Re-run the test with the desired r to generate plots and get the BFF value."
-    )
-    to_return = maximized_values
-  } else if (user_supplied_tau2) {
-    to_return = list(BFF = BFF,
-                     tau2 = tau2)
-  } else {
-    to_return = list(
-      log_BFF = BFF,
-      effect_size = effect_size,
-      log_BFF_max_RMSE = BFF_max_RMSE,
-      max_RMSE = max_RMSE
-    )
+  if(is.null(omega)){
+    log_bf         <- c(0, results)
+    omega_sequence <- c(0, omega_sequence)
+    idx_max        <- which.max(log_bf)
+    this_log_bf    <- log_bf[idx_max]
+    this_omega     <- omega_sequence[idx_max]
+  }else{
+    this_log_bf    <- results
+    this_omega     <- omega
   }
-  return(to_return)
 
+  output = list(
+    log_bf       = this_log_bf,
+    omega        = this_omega,
+    omega_set    = !is.null(omega),
+    test_type    = "z_test",
+    generic_test = FALSE,
+    r            = r,
+    input        = input
+  )
+  if(is.null(omega)){
+    output$BFF = list(log_bf = log_bf, omega = omega_sequence)
+  }
 
+  class(output) = "BFF"
+  return(output)
 }
+
+
+.process_input.z.test <- function(z_stat, n, n1, n2, one_sample, alternative){
+
+  .check_alternative(alternative)
+
+  # one vs. two-sample test processing
+  if(one_sample){
+
+    if(is.null(z_stat) || is.null(n))
+      stop("Both z_stat and and n must be provided for one-sample (`one_sample = TRUE`) test.")
+    if(length(z_stat) != length(n))
+      stop("The input length of z_stat and n must be the same.")
+
+    df <- n - 1
+    .check_df(df, "(Total sample size must be greater than 2.)")
+  }else{
+
+    if(is.null(z_stat) || is.null(n1) || is.null(n2))
+      stop("Both z_stat, n1, and n2 must be provided for two-sample (`one_sample = FALSE`) test.")
+    if(length(z_stat) != length(n1) || length(z_stat) != length(n2))
+      stop("The input length of z_stat, n1, and n2 must be the same.")
+
+    df <- n1 + n2 - 2
+    .check_df(df, "(Total sample size must be greater than 3.)")
+  }
+
+  # computation is implemented only for alternative = "two-sided" or "greater"
+  # if lower, reverse the sign of z_stat, set alternative to "greater",
+  # and remember that the original alternative was "less"
+  if (alternative == "less"){
+    z_stat      <- -z_stat
+    alternative <- "greater"
+    alternative.original <- "less"
+  }else{
+    alternative.original <- alternative
+  }
+
+  return(list(
+    z_stat     = z_stat,
+    n          = n,
+    n1         = n1,
+    n2         = n2,
+    df         = df,
+    one_sample = one_sample,
+    alternative          = alternative,
+    alternative.original = alternative.original
+  ))
+}
+
