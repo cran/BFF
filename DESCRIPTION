@@ -1,6 +1,6 @@
 Package: BFF
 Title: Bayes Factor Functions
-Version: 4.2.1
+Version: 4.4.2
 Authors@R: 
     c(person(given = "Rachael",
            family = "Shudde",
@@ -44,6 +44,6 @@ VignetteBuilder: knitr
 Depends: R (>= 2.10)
 Config/testthat/edition: 3
 NeedsCompilation: no
-Packaged: 2024-07-28 19:48:11 UTC; randm
+Packaged: 2025-05-20 01:31:19 UTC; randm
 Repository: CRAN
-Date/Publication: 2024-07-28 20:10:02 UTC
+Date/Publication: 2025-05-20 04:40:02 UTC

@@ -4,12 +4,13 @@ test_that("chi2: basic functionality", {
   fit <- chi2_test_BFF(
     chi2_stat = 1.5,
     n = 25,
+    df = 24,
     LRT = TRUE,
     omega = 0.5)
 
   # check that the BF and omega is consistent
-  testthat::expect_equal(fit$log_bf, -25.6263, tolerance = 1e-5)
-  testthat::expect_equal(fit$omega,  0.5)
+  testthat::expect_equal(fit$log_bf_h1, -25.6263, tolerance = 1e-5)
+  testthat::expect_equal(fit$omega_h1,  0.5)
 
   # test S3 methods
   testthat::expect_equal(
@@ -18,7 +19,7 @@ test_that("chi2: basic functionality", {
       "\tBayesian non-local chi2 test"  ,
       ""                                        ,
       "log Bayes factor = -25.63"                 ,
-      "omega = 0.50 (Standardized effect size)"
+      "omega = 0.50 (Cohen's w)"
     )
   )
   testthat::expect_error(plot(fit), "Bayes factor function can be plotted only if a specific omega/tau2 is not user set")
@@ -63,12 +64,13 @@ test_that("chi2: basic functionality", {
   fit <- chi2_test_BFF(
     chi2_stat = 5.5,
     n = 25,
+    df = 24,
     LRT = FALSE,
     omega = 0.5)
 
   # check that the BF and omega is consistent
-  testthat::expect_equal(fit$log_bf, -25.29, tolerance = 1e-2)
-  testthat::expect_equal(fit$omega,  0.50)
+  testthat::expect_equal(fit$log_bf_h1, -25.29, tolerance = 1e-2)
+  testthat::expect_equal(fit$omega_h1,  0.50)
 
   # test S3 methods
   testthat::expect_equal(
@@ -77,7 +79,7 @@ test_that("chi2: basic functionality", {
       "\tBayesian non-local chi2 test"  ,
       ""                                        ,
       "log Bayes factor = -25.29"                 ,
-      "omega = 0.50 (Standardized effect size)"
+      "omega = 0.50 (Cohen's w)"
     )
   )
   #MODIFY FOR CHI2
@@ -89,11 +91,12 @@ test_that("chi2: basic functionality", {
   fit <- chi2_test_BFF(
     chi2_stat = 9.5,
     n = 45,
+    df = 44,
     LRT = FALSE)
 
   # check that the BF and omega is consistent
-  testthat::expect_equal(fit$log_bf, 0.00, tolerance = 1e-5)
-  testthat::expect_equal(fit$omega,  0.00)
+  testthat::expect_equal(fit$log_bf_h1, 0.00, tolerance = 1e-5)
+  testthat::expect_equal(fit$omega_h1,  0.00)
 
   # test S3 methods
   testthat::expect_equal(
@@ -101,8 +104,10 @@ test_that("chi2: basic functionality", {
     c(
       "\tBayesian non-local chi2 test"  ,
       ""                                        ,
-      "maximized log Bayes factor = 0.00"       ,
-      "maximized omega = 0.00 (Standardized effect size)"
+      "maximized (in favor of alternative) log Bayes factor = 0.00"       ,
+      "maximized (in favor of alternative) omega = 0.00 (Cohen's w)"       ,
+      "minimized (in favor of null for medium/large effect sizes) log Bayes factor = -87.95"       ,
+      "minimized (in favor of null for medium/large effect sizes) omega = 1.00 (Cohen's w)"
     )
   )
   #MODIFY FOR CHI2
@@ -121,11 +126,12 @@ test_that("chi2: basic functionality", {
   fit <- chi2_test_BFF(
     chi2_stat = 7.5,
     n = 45,
+    df = 44,
     LRT = TRUE)
 
   # check that the BF and omega is consistent
-  testthat::expect_equal(fit$log_bf, 0.00, tolerance = 1e-5)
-  testthat::expect_equal(fit$omega,  0.00)
+  testthat::expect_equal(fit$log_bf_h1, 0.00, tolerance = 1e-5)
+  testthat::expect_equal(fit$omega_h1,  0.00)
 
   # test S3 methods
   testthat::expect_equal(
@@ -133,8 +139,10 @@ test_that("chi2: basic functionality", {
     c(
       "\tBayesian non-local chi2 test"  ,
       ""                                        ,
-      "maximized log Bayes factor = 0.00"       ,
-      "maximized omega = 0.00 (Standardized effect size)"
+      "maximized (in favor of alternative) log Bayes factor = 0.00"       ,
+      "maximized (in favor of alternative) omega = 0.00 (Cohen's w)" ,
+      "minimized (in favor of null for medium/large effect sizes) log Bayes factor = -87.97",
+      "minimized (in favor of null for medium/large effect sizes) omega = 1.00 (Cohen's w)"
     )
   )
   #MODIFY FOR CHI2
@@ -145,12 +153,13 @@ test_that("chi2: basic functionality", {
   fit <- chi2_test_BFF(
     chi2_stat = 7.5,
     n = 45,
+    df = 44,
     LRT = FALSE,
     r = 5)
 
   # check that the BF and omega is consistent
-  testthat::expect_equal(fit$log_bf, 0.00, tolerance = 1e-5)
-  testthat::expect_equal(fit$omega,  0.00)
+  testthat::expect_equal(fit$log_bf_h1, 0.00, tolerance = 1e-5)
+  testthat::expect_equal(fit$omega_h1,  0.00)
 
   # test S3 methods
   testthat::expect_equal(
@@ -158,8 +167,12 @@ test_that("chi2: basic functionality", {
     c(
       "\tBayesian non-local chi2 test"  ,
       ""                                        ,
-      "maximized log Bayes factor = 0.00"       ,
-      "maximized omega = 0.00 (Standardized effect size)"
+
+      "maximized (in favor of alternative) log Bayes factor = 0.00",
+      "maximized (in favor of alternative) omega = 0.00 (Cohen's w)",
+      "minimized (in favor of null for medium/large effect sizes) log Bayes factor = -98.85",
+      "minimized (in favor of null for medium/large effect sizes) omega = 1.00 (Cohen's w)"
     )
   )
 })
+

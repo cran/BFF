@@ -22,7 +22,7 @@ BFF_z_test = function(tau2, z_stat, r, two_sided)
     final_BF = a * hypergeom1F1(r + 1/2, 1/2, tau2 * z_stat^2 / (2 * (1 + tau2)) )$f
   } else {
     first_hypergeo = hypergeom1F1(r +1/2, 1/2, y^2)$f
-    second_hypergeo = hypergeom1F1(r + 1/2, 3/2, y^2)$f
+    second_hypergeo = hypergeom1F1(r + 1, 3/2, y^2)$f
     const = 2 * y * gamma_approx(r+1) / gamma_approx(r + 1/2)
     final_BF = a*(first_hypergeo + const*second_hypergeo)
   }
@@ -90,7 +90,7 @@ backend_z <- function(
 #' @param alternative the alternative. options are "two.sided" or "less" or "greater"
 #' @param omega standardized effect size. For the z-test, this is often called Cohen's d (can be a single entry or a vector of values)
 #' @param omega_sequence sequence of standardized effect sizes. If no omega is provided, omega_sequence is set to be seq(0.01, 1, by = 0.01)
-#' @param r variable controlling dispersion of non-local priors. Default is 1.
+#' @param r variable controlling dispersion of non-local priors. Default is 1. r must be >= 1
 #'
 #' @return Returns an S3 object of class `BFF` (see `BFF.object` for details).
 #' @export
@@ -113,7 +113,7 @@ z_test_BFF <- function(
 
 {
   ### input checks and processing
-  input <- .process_input.z.test(z_stat, n, n1, n2, one_sample, alternative)
+  input <- .process_input.z.test(z_stat, n, n1, n2, one_sample, alternative, r)
 
   ### computation
   # calculate BF
@@ -122,6 +122,14 @@ z_test_BFF <- function(
     r         = r,
     omega     = if(!is.null(omega)) omega else omega_sequence
   )
+
+  ## compute minimum BFF for anything larger than small effect sizes
+  if (is.null(omega)) {
+    minimums = get_min_omega_bff(omega = omega_sequence, bff = results, cutoff = 0.2)
+  }  else
+  {
+    minimums = c(NULL, NULL)
+  }
 
   ###### return logic
   if(is.null(omega)){
@@ -136,8 +144,10 @@ z_test_BFF <- function(
   }
 
   output = list(
-    log_bf       = this_log_bf,
-    omega        = this_omega,
+    log_bf_h1       = this_log_bf,
+    omega_h1        = this_omega,
+    log_bf_h0     = minimums[1],
+    omega_h0      = minimums[2],
     omega_set    = !is.null(omega),
     test_type    = "z_test",
     generic_test = FALSE,
@@ -153,7 +163,11 @@ z_test_BFF <- function(
 }
 
 
-.process_input.z.test <- function(z_stat, n, n1, n2, one_sample, alternative){
+.process_input.z.test <- function(z_stat, n, n1, n2, one_sample, alternative, r){
+
+
+  if (r < 1)
+    stop("r must be greater than or equal to 1")
 
   .check_alternative(alternative)
 

@@ -16,7 +16,8 @@
 #'  \item{"ylab"}{y-axis label of the figure}
 #'  \item{"add_segments"}{whether effect size
 #'  segments should be added to the figure. Available only
-#'  for standardized effect sizes. Defaults to \code{TRUE}}}
+#'  for standardized effect sizes. Defaults to \code{TRUE}}
+#' }
 #'
 #' @return either a ggplot2 object if \code{plot = TRUE} or a data.frame
 #' with a Bayes factor function if \code{plot = FALSE}
@@ -120,7 +121,7 @@ plot.BFF = function(x, plot = TRUE,  ...) {
          "z_test"    = c(0.2, 0.5, 0.8), # https://pressbooks.bccampus.ca/statspsych/chapter/chapter-11/
          "chi2_test" = c(0.1, 0.3, 0.5),
          "regression_test" = c(0.02, 0.15, 0.35),
-         "f_test"    = c(0.1, 0.24, 0.4))
+         "f_test"    = c(0.1, 0.25, 0.4))
 }
 .get_effect_size_range    <-  function(test_type){
   switch(test_type,

@@ -1,5 +1,5 @@
-################# T functions if r is an integer and equal to 1 (PNAS, not called)
-BFF_t_test_r1 = function(tau2, t_stat, df)
+################# T functions if r is an integer and equal to 1
+t_val_r1 = function(tau2, t_stat, df)
 {
   r = 1 + t_stat ^ 2 / df
   s = 1 + t_stat ^ 2 / (df * (1 + tau2))
@@ -13,19 +13,26 @@ BFF_t_test_r1 = function(tau2, t_stat, df)
 }
 
 ####################### backend implementation (SPL, default)
-BFF_t_test = function(tau2, t_stat, df, r, two_sided)
+BFF_t_test = function(tau2, t_stat, r, two_sided, df)
 {
 
   a = get_a(tau2=tau2, r=r)
-  c = get_c(tau2=tau2, df=df, r=r)
-  y = get_y_t_test(tau2=tau2, t=t_stat, df=df)
+  y = get_y_t_test(tau2=tau2, t=t_stat, df = df)
+  c = get_c(tau2=tau2, df = df, r = r)
 
-  first_hypergeo = Gauss2F1((df+1)/2, r + 1/2, 1/2, y^2)
-  second_hypergeo = Gauss2F1(df/2 + 1, r + 1, 3/2, y^2)
 
-  const = ifelse(two_sided, 1, 2)
-
-  final_BF = a*(first_hypergeo + const*c*y*second_hypergeo)
+  if (two_sided) {
+    # first_hypergeo_2 = Gauss2F1((df+1)/2, r + 1/2, 1/2, y^2)
+    # second_hypergeo_2 = c * y * Gauss2F1(df/2 + 1, r + 1, 3/2, y^2)
+    # final_BF = a * (first_hypergeo_2 + second_hypergeo_2)
+    # updates from errata
+    hypergeo = Gauss2F1((df+1)/2, r + 1/2, 1/2, y^2)
+    final_BF = a*hypergeo
+  } else {
+    first_hypergeo = Gauss2F1((df+1)/2, r + 1/2, 1/2, y^2)
+    second_hypergeo = 2 * c * y * Gauss2F1(df/2 + 1, r + 1, 3/2, y^2)
+    final_BF = a * (first_hypergeo + second_hypergeo)
+  }
   to_return = log(final_BF)
   return(to_return)
 }
@@ -43,9 +50,9 @@ backend_t <- function(
   # i.e., tau2[omega][t-stat]
   tau2 <- lapply(omega, function(x){
     if(input$one_sample){
-      tau2 <- get_one_sample_tau2(n = input$n, w = x, r = r)
+      tau2 <- get_one_sample_tau2(n = input$n, w = x, r=r)
     }else{
-      tau2 <- get_two_sample_tau2(n1 = input$n1, n2 = input$n2, w = x, r = r)
+      tau2 <- get_two_sample_tau2(n1 = input$n1, n2 = input$n2, w = x, r=r)
     }
   })
 
@@ -55,8 +62,8 @@ backend_t <- function(
       BFF_t_test(
         tau2 = x[i],
         t_stat    = input$t_stat[i],
-        df = input$df[i],
         r = r,
+        df = input$df,
         two_sided = input$alternative == "two.sided"
       )
     }))
@@ -75,7 +82,7 @@ backend_t <- function(
 }
 
 
-################# T function user interaction
+################# t function user interaction
 
 #' t_test_BFF
 #'
@@ -83,15 +90,15 @@ backend_t <- function(
 #' By setting r > 1, we use higher-order moments for replicated studies. Fractional moments are set with r > 1 and r not an integer.
 #' All results are on the log scale.
 #'
-#' @param t_stat T statistic
+#' @param t_stat t statistic
 #' @param n sample size (if one sample test)
-#' @param one_sample is test one sided? Default is FALSE
-#' @param alternative the alternative. options are "two.sided" or "less" or "greater"
 #' @param n1 sample size of group one for two sample test. Must be provided if one_sample = FALSE
 #' @param n2 sample size of group two for two sample test. Must be provided if one_sample = FALSE
+#' @param one_sample is test one sided? Default is FALSE
+#' @param alternative the alternative. options are "two.sided" or "less" or "greater"
 #' @param omega standardized effect size. For the t-test, this is often called Cohen's d (can be a single entry or a vector of values)
 #' @param omega_sequence sequence of standardized effect sizes. If no omega is provided, omega_sequence is set to be seq(0.01, 1, by = 0.01)
-#' @param r variable controlling dispersion of non-local priors. Default is 1.
+#' @param r variable controlling dispersion of non-local priors. Default is 1. r must be >= 1
 #'
 #' @return Returns an S3 object of class `BFF` (see `BFF.object` for details).
 #' @export
@@ -100,6 +107,7 @@ backend_t <- function(
 #' tBFF = t_test_BFF(t_stat = 2.5, n = 50, one_sample = TRUE)
 #' tBFF
 #' plot(tBFF)
+
 t_test_BFF <- function(
     t_stat,
     n = NULL,
@@ -109,19 +117,27 @@ t_test_BFF <- function(
     alternative = "two.sided",
     omega = NULL,
     omega_sequence = if(is.null(omega)) seq(0.01, 1, by = 0.01),
-    r = 1){
+    r=1)
 
-
+{
   ### input checks and processing
-  input <- .process_input.t.test(t_stat, n, n1, n2, one_sample, alternative)
+  input <- .process_input.t.test(t_stat, n, n1, n2, one_sample, alternative, r)
 
   ### computation
   # calculate BF
-    results   <- backend_t(
-      input     = input,
-      r         = r,
-      omega     = if(!is.null(omega)) omega else omega_sequence
-    )
+  results   <- backend_t(
+    input     = input,
+    r         = r,
+    omega     = if(!is.null(omega)) omega else omega_sequence
+  )
+
+  ## compute minimum BFF for anything larger than small effect sizes
+  if (is.null(omega)) {
+    minimums = get_min_omega_bff(omega = omega_sequence, bff = results, cutoff = 0.2)
+  }  else
+  {
+    minimums = c(NULL, NULL)
+  }
 
   ###### return logic
   if(is.null(omega)){
@@ -136,8 +152,10 @@ t_test_BFF <- function(
   }
 
   output = list(
-    log_bf       = this_log_bf,
-    omega        = this_omega,
+    log_bf_h1       = this_log_bf,
+    omega_h1        = this_omega,
+    log_bf_h0     = minimums[1],
+    omega_h0      = minimums[2],
     omega_set    = !is.null(omega),
     test_type    = "t_test",
     generic_test = FALSE,
@@ -153,7 +171,11 @@ t_test_BFF <- function(
 }
 
 
-.process_input.t.test <- function(t_stat, n, n1, n2, one_sample, alternative){
+.process_input.t.test <- function(t_stat, n, n1, n2, one_sample, alternative, r){
+
+
+  if (r < 1)
+    stop("r must be greater than or equal to 1")
 
   .check_alternative(alternative)
 

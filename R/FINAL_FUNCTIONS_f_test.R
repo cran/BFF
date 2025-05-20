@@ -81,7 +81,7 @@ backend_f <- function(
 #' @param df2 sample size of group two for two sample test
 #' @param omega standardized effect size. For the f-test, this is often called Cohen's f (can be a single entry or a vector of values)
 #' @param omega_sequence sequence of standardized effect sizes. If no omega is provided, omega_sequence is set to be seq(0.01, 1, by = 0.01)
-#' @param r variable controlling dispersion of non-local priors. Default is 1.
+#' @param r variable controlling dispersion of non-local priors. Default is 1. r must be >= 1
 #'
 #' @return Returns an S3 object of class `BFF` (see `BFF.object` for details).
 #' @export
@@ -103,7 +103,7 @@ f_test_BFF = function(f_stat,
 {
 
   ### input checks and processing
-  input <- .process_input.f.test(f_stat, n, df1, df2)
+  input <- .process_input.f.test(f_stat, n, df1, df2, r)
 
   ### computation
   # calculate BF
@@ -112,6 +112,14 @@ f_test_BFF = function(f_stat,
     r         = r,
     omega     = if(!is.null(omega)) omega else omega_sequence
   )
+
+  ## compute minimum BFF for anything larger than small effect sizes
+  if (is.null(omega)) {
+    minimums = get_min_omega_bff(omega = omega_sequence, bff = results, cutoff = 0.1)
+  }  else
+  {
+    minimums = c(NULL, NULL)
+  }
 
   ###### return logic
   if(is.null(omega)){
@@ -126,8 +134,10 @@ f_test_BFF = function(f_stat,
   }
 
   output = list(
-    log_bf       = this_log_bf,
-    omega        = this_omega,
+    log_bf_h1       = this_log_bf,
+    omega_h1        = this_omega,
+    log_bf_h0     = minimums[1],
+    omega_h0      = minimums[2],
     omega_set    = !is.null(omega),
     test_type    = "f_test",
     generic_test = FALSE,
@@ -144,7 +154,10 @@ f_test_BFF = function(f_stat,
 
 
 
-.process_input.f.test <- function(f_stat, n, df1, df2){
+.process_input.f.test <- function(f_stat, n, df1, df2, r) {
+
+  if (r < 1)
+    stop("r must be greater than or equal to 1")
 
   return(list(
     f_stat     = f_stat,

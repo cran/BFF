@@ -21,7 +21,8 @@ function. These include: \describe{
  \item{"ylab"}{y-axis label of the figure}
  \item{"add_segments"}{whether effect size
  segments should be added to the figure. Available only
- for standardized effect sizes. Defaults to \code{TRUE}}}}
+ for standardized effect sizes. Defaults to \code{TRUE}}
+}}
 }
 \value{
 either a ggplot2 object if \code{plot = TRUE} or a data.frame
