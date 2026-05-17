@@ -26,9 +26,21 @@
 #'
 #' @export
 plot.BFF = function(x, plot = TRUE,  ...) {
-
   if (is.null(x$BFF))
     stop("Bayes factor function can be plotted only if a specific omega/tau2 is not user set")
+
+  # plotting limits
+  has_switched = any(diff(sign(x$BFF$log_bf)) == -2)
+  indices = which(diff(sign(x$BFF$log_bf)) == -2) + 1
+  thirty_percent_more = floor(length(x$BFF$log_bf)/3)
+  new_max_index = which.min(abs(x$BFF$omega - 1))
+
+  if (has_switched) {
+    # if the switch is after 1, then plot the switch + 30% more (if applicable)
+    current_limit = x$BFF$omega[indices]
+    new_max_index = ifelse(length(x$BFF$log_bf) < indices + thirty_percent_more, length(x$BFF$log_bf), indices+thirty_percent_more)
+  }
+
 
   # extract the BFF object (deal with generic/specific effect sizes)
   log_BF = NULL
@@ -39,8 +51,8 @@ plot.BFF = function(x, plot = TRUE,  ...) {
     )
   }else{
     df <- data.frame(
-      x      = x$BFF$omega,
-      log_BF = x$BFF$log_bf
+      x      = x$BFF$omega[1:new_max_index],
+      log_BF = x$BFF$log_bf[1:new_max_index]
     )
   }
 
@@ -52,7 +64,7 @@ plot.BFF = function(x, plot = TRUE,  ...) {
   title <- if(is.null(dots[["title"]])) "Bayes Factor Function"                else dots[["title"]]
   ylab  <- if(is.null(dots[["ylab"]]))  "Bayes Factor Against Null Hypothesis" else dots[["ylab"]]
   xlab  <- if(is.null(dots[["xlab"]])){
-    if(x$generic_test) expression(tau^2) else .test_effect_size_name(x$test_type)
+    if(x$generic_test) expression(tau^2) else .test_effect_size_name_plot(x$test_type)
   }else dots[["xlab"]]
   add_segments <- if(is.null(dots[["add_segments"]])) TRUE else dots[["add_segments"]]
 
@@ -82,6 +94,7 @@ plot.BFF = function(x, plot = TRUE,  ...) {
       )
     }
 
+    # print("The Bayes Factor Function is plotted for standardized effect sizes between 0 and 1.")
     out <- out + ggplot2::geom_vline(
       xintercept = effect_size_cutpoints,
       lwd        = 0.2)

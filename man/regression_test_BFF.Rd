@@ -10,7 +10,7 @@ regression_test_BFF(
   k = NULL,
   alternative = "two.sided",
   omega = NULL,
-  omega_sequence = if (is.null(omega)) seq(0.01, 1, by = 0.01),
+  omega_sequence = if (is.null(omega)) seq(0.01, 3, by = 0.01),
   r = 1
 )
 }

@@ -13,7 +13,7 @@ t_test_BFF_invm(
   one_sample = FALSE,
   alternative = "two.sided",
   omega = NULL,
-  omega_sequence = if (is.null(omega)) seq(0.01, 1, by = 0.01),
+  omega_sequence = if (is.null(omega)) seq(0.01, 3, by = 0.01),
   default_max = 700
 )
 }
@@ -22,7 +22,10 @@ t_test_BFF_invm(
 
 \item{n}{sample size (if one sample test)}
 
-\item{nu}{hyperparemeter for the inverse moment prior}
+\item{nu}{hyperpare
+
+
+meter for the inverse moment prior}
 
 \item{n1}{sample size of group one for two sample test. Must be provided if one_sample = FALSE}
 
@@ -47,7 +50,16 @@ By setting r > 1, we use higher-order moments for replicated studies. Fractional
 All results are on the log scale.
 }
 \examples{
-tBFF = t_test_BFF_invm(t_stat = 0.5, n = 50, nu = 1, one_sample = TRUE)
+tBFF = t_test_BFF_invm(t_stat = 0, n1 = 50, n2 = 25, one_sample = FALSE)
 tBFF
 plot(tBFF)
+
+tBFF_t = t_test_BFF_invm(t_stat=-2.5, n=50, one_sample=TRUE)
+tBFF_t
+plot(tBFF_t)
+
+tBFF_t = t_test_BFF_invm(t_stat=6, n=51, one_sample=TRUE)
+tBFF_t
+plot(tBFF_t)
+
 }

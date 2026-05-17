@@ -87,7 +87,7 @@ backend_f <- function(
 #' @export
 #'
 #' @examples
-#' fBFF = f_test_BFF(f_stat = 1.5, n = 50, df1 = 25, df2 = 48)
+#' fBFF = f_test_BFF(f_stat = .5, n = 50, df1 = 2, df2 = 48)
 #' fBFF
 #' plot(fBFF)
 #'
@@ -96,7 +96,7 @@ f_test_BFF = function(f_stat,
                       df1,
                       df2,
                       omega = NULL,
-                      omega_sequence = if(is.null(omega)) seq(0.01, 1, by = 0.01),
+                      omega_sequence = if(is.null(omega)) seq(0.01, 3, by = 0.01),
                       r = 1)
 
 

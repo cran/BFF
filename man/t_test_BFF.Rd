@@ -12,7 +12,7 @@ t_test_BFF(
   one_sample = FALSE,
   alternative = "two.sided",
   omega = NULL,
-  omega_sequence = if (is.null(omega)) seq(0.01, 1, by = 0.01),
+  omega_sequence = if (is.null(omega)) seq(0.01, 3, by = 0.01),
   r = 1
 )
 }
@@ -44,7 +44,7 @@ By setting r > 1, we use higher-order moments for replicated studies. Fractional
 All results are on the log scale.
 }
 \examples{
-tBFF = t_test_BFF(t_stat = 2.5, n = 50, one_sample = TRUE)
+tBFF = t_test_BFF(t_stat = -3, n1 = 25, n2 = 25, one_sample = FALSE)
 tBFF
 plot(tBFF)
 }

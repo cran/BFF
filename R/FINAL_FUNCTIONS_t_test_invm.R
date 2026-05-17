@@ -18,13 +18,17 @@ integrand_invm = function(lambda,t,tau2,nu,df, default_max){
 
   # do the actual integration
   # is_warning = FALSE
-  # dt_term = tryCatch(dt(t,df=df,ncp=lambda,log=TRUE),warning=function(w) return(list(x(5),w)))
+  # dt_term = tryCatch(dt(t,df=df,ncp=lambda,log=TRUE)) #,warning=function(w) return(list(x(5),w)))
   # if (length(dt_term) == 2) {
-  #   dt_term = dt_term[[1]]
-  #   is_warning = TRUE
+  #   dt_term = DPQ::dtWV(t, df, ncp=lambda, log=TRUE)
+  # } else {
+  #   dt_term=stats::dt(t,df=df,ncp=lambda,log=TRUE)
   # }
+  dt_term = DPQ::dtWV(t, df, ncp=lambda, log=TRUE)
+  # dt_term=stats::dt(t,df=df,ncp=lambda,log=TRUE)
 
-  arg = -tau2/lambda^2-(0.5*(nu+1))*log(lambda2)+nu_half*log(tau2)- lgamma(nu_half) + stats::dt(t,df=df,ncp=lambda,log=TRUE)
+  # arg = -tau2/lambda^2-(0.5*(nu+1))*log(lambda2)+nu_half*log(tau2)- lgamma(nu_half) + stats::dt(t,df=df,ncp=lambda,log=TRUE)
+  arg = -tau2/lambda^2-(0.5*(nu+1))*log(lambda2)+nu_half*log(tau2)- lgamma(nu_half) + dt_term
 
   arg[arg<(-default_max)]=(-default_max) # cut off anything that is too small
   x = exp(arg)
@@ -34,7 +38,29 @@ integrand_invm = function(lambda,t,tau2,nu,df, default_max){
 # backend_t_invm = function(t,n1,n2,nu,omega, default_max = 700){ # Two-sided t test with IM(nu,tau(omega))#  prior}
 
 BFF_t_test_invm = function(tau2, t_stat, nu, df, default_max) {
-  BFF = tryCatch(stats::integrate(integrand_invm,
+  # BFF = tryCatch(stats::integrate(integrand_invm,
+  #                               lower=-Inf,
+  #                               upper=Inf,
+  #                               t=t_stat,
+  #                               tau2=tau2,
+  #                               nu=nu,
+  #                               df=df,
+  #                               default_max=default_max,
+  #                               rel.tol=.Machine$double.eps^.125),
+  #                warning = function(w)
+  #                  # return(list(5, w)))
+  #                return(list(suppressWarnings(stats::integrate(integrand_invm,
+  #                                      lower=-Inf,
+  #                                      upper=Inf,
+  #                                      t=t_stat,
+  #                                      tau2=tau2,
+  #                                      nu=nu,
+  #                                      df=df,
+  #                                      default_max=default_max,
+  #                                      rel.tol=.Machine$double.eps^.125))$value,w)))
+
+  # calculate it twice, with two different warnings
+  BFF = stats::integrate(integrand_invm,
                                 lower=-Inf,
                                 upper=Inf,
                                 t=t_stat,
@@ -42,24 +68,42 @@ BFF_t_test_invm = function(tau2, t_stat, nu, df, default_max) {
                                 nu=nu,
                                 df=df,
                                 default_max=default_max,
-                                rel.tol=.Machine$double.eps^.125),
-                 warning = function(w)
-                   # return(list(5, w)))
-                 return(list(suppressWarnings(stats::integrate(integrand_invm,
-                                       lower=-Inf,
-                                       upper=Inf,
-                                       t=t_stat,
-                                       tau2=tau2,
-                                       nu=nu,
-                                       df=df,
-                                       default_max=default_max,
-                                       rel.tol=.Machine$double.eps^.125))$value,w)))
-  is_warning = FALSE
-  if (length(BFF) == 2) {
-    BFF = BFF[[1]]
-    is_warning = TRUE
-    # print("The non-central t may have precision input issues stemming from the dt() function. The estimate is still returned")
+                                rel.tol=.Machine$double.eps^.125)
+
+  if (BFF$message != "OK") {
+    BFF = tryCatch(
+      {
+        stats::integrate(integrand_invm,
+                         lower=-Inf,
+                         upper=Inf,
+                         t=t_stat,
+                         tau2=tau2,
+                         nu=nu,
+                         df=df,
+                         default_max=default_max,
+                         rel.tol=.Machine$double.eps^.1)$value
+      },
+      warning = function(w) {
+        # Extract and return the value even if a warning is thrown
+        return(w$value)
+      }
+    )
+  } else {
+    BFF = BFF$value
   }
+
+
+
+  # is_warning = FALSE
+  # if (length(BFF) == 2) {
+  #   BFF = BFF[[1]]
+  #   is_warning = TRUE
+  #   # print("The non-central t may have precision input issues stemming from the dt() function. The estimate is still returned")
+  # } else {
+  #   # if there weren't precision warnings
+  #   BFF=BFF
+  # }
+
   # calculate logs and control for overflow
   # first, catch if any errors in dt
   dt_term = stats::dt(t_stat,df,ncp=0,log=TRUE)
@@ -67,7 +111,7 @@ BFF_t_test_invm = function(tau2, t_stat, nu, df, default_max) {
   log_BF = log(BFF)-dt_term
   to_return = min(log_BF,default_max)
 
-  return(list("to_return" = to_return, "is_warning" = is_warning))
+  return(list("to_return" = to_return)) # , "is_warning" = is_warning))
 }
 
 backend_t_invm <- function(
@@ -110,28 +154,47 @@ backend_t_invm <- function(
       }))
     })
 
+    # # for debugging purposes
+    i=1
+    tau2 = tau2[[i]]
+    t_stat    = input$t_stat[i]
+    nu = input$nu
+    df = input$df
+    default_max = input$default_max
 
-  # recompute to check for any warnings
-  # TODO have a more elegant solution for this, this is not great yet
-  count = 1
-  warnings_list = vector()
-  for (i in 1:length(tau2)) {
-    for (j in 1:length(input$t_stat)) {
-      warnings_list[count] = BFF_t_test_invm(
+    temp = vector()
+    for (i in 1:length(tau2)) {
+      temp[i] = BFF_t_test_invm(
         tau2 = tau2[[i]],
-        t_stat    = input$t_stat[j],
+        t_stat    = input$t_stat[i],
         nu = input$nu,
         df = input$df,
         default_max = input$default_max
-      )$is_warning
-
-      count = count + 1
+      )$to_return
     }
-  }
 
-  if (any(warnings_list)) {
-    print("The non-central t has potential precision issues stemming from dt(). The estimate is still returned")
-  }
+
+  # # recompute to check for any warnings
+  # # TODO have a more elegant solution for this, this is not great yet
+  # count = 1
+  # warnings_list = vector()
+  # for (i in 1:length(tau2)) {
+  #   for (j in 1:length(input$t_stat)) {
+  #     warnings_list[count] = BFF_t_test_invm(
+  #       tau2 = tau2[[i]],
+  #       t_stat    = input$t_stat[j],
+  #       nu = input$nu,
+  #       df = input$df,
+  #       default_max = input$default_max
+  #     )$is_warning
+  #
+  #     count = count + 1
+  #   }
+  # }
+
+  # if (any(warnings_list)) {
+  #   print("The non-central t has potential precision issues stemming from dt(). The estimate is still returned")
+  # }
 
   return(log_BF)
 }
@@ -147,7 +210,10 @@ backend_t_invm <- function(
 #'
 #' @param t_stat t statistic
 #' @param n sample size (if one sample test)
-#' @param nu hyperparemeter for the inverse moment prior
+#' @param nu hyperpare
+#'
+#'
+#' meter for the inverse moment prior
 #' @param n1 sample size of group one for two sample test. Must be provided if one_sample = FALSE
 #' @param n2 sample size of group two for two sample test. Must be provided if one_sample = FALSE
 #' @param one_sample is test one sided? Default is FALSE
@@ -160,9 +226,18 @@ backend_t_invm <- function(
 #' @export
 #'
 #' @examples
-#' tBFF = t_test_BFF_invm(t_stat = 0.5, n = 50, nu = 1, one_sample = TRUE)
+#' tBFF = t_test_BFF_invm(t_stat = 0, n1 = 50, n2 = 25, one_sample = FALSE)
 #' tBFF
 #' plot(tBFF)
+#'
+#'tBFF_t = t_test_BFF_invm(t_stat=-2.5, n=50, one_sample=TRUE)
+#'tBFF_t
+#'plot(tBFF_t)
+#'
+#'tBFF_t = t_test_BFF_invm(t_stat=6, n=51, one_sample=TRUE)
+#'tBFF_t
+#'plot(tBFF_t)
+#'
 
 t_test_BFF_invm <- function(
     t_stat,
@@ -173,13 +248,14 @@ t_test_BFF_invm <- function(
     one_sample = FALSE,
     alternative = "two.sided",
     omega = NULL,
-    omega_sequence = if(is.null(omega)) seq(0.01, 1, by = 0.01),
+    omega_sequence = if(is.null(omega)) seq(0.01, 3, by = 0.01),
     default_max = 700
     )
-
 {
+  # t_stat = 2.5; n = 50; one_sample=TRUE; nu = 1; omega = NULL; omega_sequence = if(is.null(omega)) seq(0.01, 1, by = 0.01); default_max=700; n1=n2=NULL; alternative="two.sided"
+  # omega=omega_sequence
   ### input checks and processing
-  input <- .process_input.t.test.invm(t_stat, n, n1, n2, nu, one_sample, alternative, default_max)
+  input <- .process_input.t.test.invm(t_stat, default_max, n, n1, n2, nu, one_sample, alternative)
 
   ### computation
   # calculate BF
@@ -228,9 +304,17 @@ t_test_BFF_invm <- function(
 }
 
 
-.process_input.t.test.invm <- function(t_stat, n, n1, n2, nu, one_sample, alternative, default_max){
-
-
+.process_input.t.test.invm <- function(t_stat, default_max, n, n1, n2, nu, one_sample, alternative){
+  # print("got inside the function")
+  # print("default_max")
+  # print(t_stat)
+  # print(default_max)
+  # print(n)
+  # print(n1)
+  # print(n2)
+  # print(nu)
+  # print(one_sample)
+  # print(alternative)
   # if (r < 1)
   #   stop("r must be greater than or equal to 1")
   #

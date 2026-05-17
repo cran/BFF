@@ -16,10 +16,11 @@ test_that("two-sample: basic functionality", {
   testthat::expect_equal(
     testthat::capture_output_lines(fit, print = TRUE, width = 100),
     c(
-      "\tBayesian non-local f test"  ,
-      ""                                        ,
-      "log Bayes factor = -2.89"                 ,
-      "omega = 0.50 (Cohen's f)"
+      "",
+      "\tBayes Factor Test With Non-Local Priors For A F-Test",
+      "",
+      "Log BF = -2.89 at standardized effect size 0.5",
+      ""
     )
   )
   testthat::expect_error(plot(fit), "Bayes factor function can be plotted only if a specific omega/tau2 is not user set")
@@ -75,12 +76,13 @@ test_that("two-sample: basic functionality", {
   testthat::expect_equal(
     testthat::capture_output_lines(fit, print = TRUE, width = 100),
     c(
-      "\tBayesian non-local f test"  ,
+      "",
+      "\tBayes Factor Test With Non-Local Priors For A F-Test"  ,
       ""                                        ,
-      "maximized (in favor of alternative) log Bayes factor = 0.82",
-      "maximized (in favor of alternative) omega = 0.14 (Cohen's f)",
-      "minimized (in favor of null for medium/large effect sizes) log Bayes factor = -23.60",
-      "minimized (in favor of null for medium/large effect sizes) omega = 1.00 (Cohen's f)"
+      "The log BF is maximized in favor of the alternative hypothesis at the standardized effect size of 0.14 with value 0.82. Standardized effect size should be chosen for individual hypotheses based on scientific intent and plausibilty.",
+      "",
+      "The BF switches from providing evidence for the alternative hypothesis to evidence for the null hypothesis at the standardized effect size of 0.23",
+      ""
     )
   )
   #Modify for F test
@@ -112,12 +114,13 @@ test_that("two-sample: basic functionality", {
   testthat::expect_equal(
     testthat::capture_output_lines(fit, print = TRUE, width = 100),
     c(
-      "\tBayesian non-local f test"  ,
+      "",
+      "\tBayes Factor Test With Non-Local Priors For A F-Test"  ,
       ""                                        ,
-      "maximized (in favor of alternative) log Bayes factor = 1.94",
-      "maximized (in favor of alternative) omega = 0.24 (Cohen's f)",
-      "minimized (in favor of null for medium/large effect sizes) log Bayes factor = -22.83",
-      "minimized (in favor of null for medium/large effect sizes) omega = 1.00 (Cohen's f)"
+      "The log BF is maximized in favor of the alternative hypothesis at the standardized effect size of 0.24 with value 1.94. Standardized effect size should be chosen for individual hypotheses based on scientific intent and plausibilty.",
+      "",
+      "The BF switches from providing evidence for the alternative hypothesis to evidence for the null hypothesis at the standardized effect size of 0.4",
+      ""
     )
   )
 

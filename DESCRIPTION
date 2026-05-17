@@ -1,6 +1,6 @@
 Package: BFF
 Title: Bayes Factor Functions
-Version: 4.5.0
+Version: 5.0.0
 Authors@R: 
     c(person(given = "Rachael",
            family = "Shudde",
@@ -37,13 +37,13 @@ License: GPL (>= 2)
 URL: https://github.com/rshudde/BFF
 BugReports: https://github.com/rshudde/BFF/issues
 Encoding: UTF-8
-Imports: grDevices, ggplot2, Matrix, gsl, stats, rlang
+Imports: grDevices, ggplot2, Matrix, gsl, stats, rlang, DPQ
 Suggests: testthat (>= 3.0.0), knitr, rmarkdown, BSDA, vdiffr
 RoxygenNote: 7.3.1
 VignetteBuilder: knitr
 Depends: R (>= 2.10)
 Config/testthat/edition: 3
 NeedsCompilation: no
-Packaged: 2025-11-06 02:30:47 UTC; randm
+Packaged: 2026-05-17 16:23:03 UTC; randm
 Repository: CRAN
-Date/Publication: 2025-11-06 03:30:02 UTC
+Date/Publication: 2026-05-17 17:10:02 UTC

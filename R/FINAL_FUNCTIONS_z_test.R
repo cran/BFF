@@ -96,7 +96,7 @@ backend_z <- function(
 #' @export
 #'
 #' @examples
-#' zBFF = z_test_BFF(z_stat = 2.5, n = 50, one_sample = TRUE)
+#' zBFF = z_test_BFF(z_stat = -2.5, n1 = 25, n2 = 25, one_sample = FALSE)
 #' zBFF
 #' plot(zBFF)
 
@@ -108,7 +108,7 @@ z_test_BFF <- function(
     one_sample = FALSE,
     alternative = "two.sided",
     omega = NULL,
-    omega_sequence = if(is.null(omega)) seq(0.01, 1, by = 0.01),
+    omega_sequence = if(is.null(omega)) seq(0.01, 3, by = 0.01),
     r=1)
 
 {

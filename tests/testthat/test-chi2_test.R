@@ -16,10 +16,11 @@ test_that("chi2: basic functionality", {
   testthat::expect_equal(
     testthat::capture_output_lines(fit, print = TRUE, width = 100),
     c(
-      "\tBayesian non-local chi2 test"  ,
-      ""                                        ,
-      "log Bayes factor = -25.63"                 ,
-      "omega = 0.50 (Cohen's w)"
+      "",
+      "\tBayes Factor Test With Non-Local Priors For A chi2-Test",
+      "",
+      "Log BF = -25.63 at standardized effect size 0.5",
+      ""
     )
   )
   testthat::expect_error(plot(fit), "Bayes factor function can be plotted only if a specific omega/tau2 is not user set")
@@ -76,10 +77,11 @@ test_that("chi2: basic functionality", {
   testthat::expect_equal(
     testthat::capture_output_lines(fit, print = TRUE, width = 100),
     c(
-      "\tBayesian non-local chi2 test"  ,
-      ""                                        ,
-      "log Bayes factor = -25.29"                 ,
-      "omega = 0.50 (Cohen's w)"
+      "",
+      "\tBayes Factor Test With Non-Local Priors For A chi2-Test",
+      "",
+      "Log BF = -25.29 at standardized effect size 0.5",
+      ""
     )
   )
   #MODIFY FOR CHI2
@@ -102,12 +104,12 @@ test_that("chi2: basic functionality", {
   testthat::expect_equal(
     testthat::capture_output_lines(fit, print = TRUE, width = 100),
     c(
-      "\tBayesian non-local chi2 test"  ,
-      ""                                        ,
-      "maximized (in favor of alternative) log Bayes factor = 0.00"       ,
-      "maximized (in favor of alternative) omega = 0.00 (Cohen's w)"       ,
-      "minimized (in favor of null for medium/large effect sizes) log Bayes factor = -87.95"       ,
-      "minimized (in favor of null for medium/large effect sizes) omega = 1.00 (Cohen's w)"
+      "",
+      "\tBayes Factor Test With Non-Local Priors For A chi2-Test"  ,
+      "",
+      "",
+      "The BF provides evidence for the null hypothesis across all standardized effect sizes",
+      ""
     )
   )
   #MODIFY FOR CHI2
@@ -137,12 +139,12 @@ test_that("chi2: basic functionality", {
   testthat::expect_equal(
     testthat::capture_output_lines(fit, print = TRUE, width = 100),
     c(
-      "\tBayesian non-local chi2 test"  ,
-      ""                                        ,
-      "maximized (in favor of alternative) log Bayes factor = 0.00"       ,
-      "maximized (in favor of alternative) omega = 0.00 (Cohen's w)" ,
-      "minimized (in favor of null for medium/large effect sizes) log Bayes factor = -87.97",
-      "minimized (in favor of null for medium/large effect sizes) omega = 1.00 (Cohen's w)"
+      "",
+      "\tBayes Factor Test With Non-Local Priors For A chi2-Test"  ,
+      "",
+      "",
+      "The BF provides evidence for the null hypothesis across all standardized effect sizes",
+      ""
     )
   )
   #MODIFY FOR CHI2
@@ -151,7 +153,7 @@ test_that("chi2: basic functionality", {
 
   #Checking with different r
   fit <- chi2_test_BFF(
-    chi2_stat = 7.5,
+    chi2_stat = .5,
     n = 45,
     df = 44,
     LRT = FALSE,
@@ -165,13 +167,12 @@ test_that("chi2: basic functionality", {
   testthat::expect_equal(
     testthat::capture_output_lines(fit, print = TRUE, width = 100),
     c(
-      "\tBayesian non-local chi2 test"  ,
-      ""                                        ,
-
-      "maximized (in favor of alternative) log Bayes factor = 0.00",
-      "maximized (in favor of alternative) omega = 0.00 (Cohen's w)",
-      "minimized (in favor of null for medium/large effect sizes) log Bayes factor = -98.85",
-      "minimized (in favor of null for medium/large effect sizes) omega = 1.00 (Cohen's w)"
+      "",
+      "\tBayes Factor Test With Non-Local Priors For A chi2-Test"  ,
+      "",
+      "",
+      "The BF provides evidence for the null hypothesis across all standardized effect sizes",
+      ""
     )
   )
 })

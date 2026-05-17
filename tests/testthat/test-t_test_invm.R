@@ -1,15 +1,15 @@
 test_that("two-sample: basic functionality", {
 
-  ### test fixed omega -- non-local prior regression (two-sided)
-  fit <- regression_test_BFF(
-    t_stat = 1.5,
+  ### test fixed omega -- non-local prior t-test (two-sided)
+  fit <- t_test_BFF_invm(
+    t_stat = 2.5,
     alternative = "two.sided",
-    n = 50,
-    k = 3,
+    n1 = 50,
+    n2 = 50,
     omega = 0.5)
 
   # check that the BF and omega is consistent
-  testthat::expect_equal(fit$log_bf_h1, -0.43374, tolerance = 1e-5)
+  testthat::expect_equal(fit$log_bf_h1, 0.6384044, tolerance = 1e-5)
   testthat::expect_equal(fit$omega_h1,  0.5)
 
   # test S3 methods
@@ -17,20 +17,20 @@ test_that("two-sample: basic functionality", {
     testthat::capture_output_lines(fit, print = TRUE, width = 100),
     c(
       "",
-      "\tBayes Factor Test With Non-Local Priors For A Regression Test",
+      "\tBayes Factor Test With Non-Local Priors For A Two-Sample t-Test",
       "",
-      "Log BF = -0.43 at standardized effect size 0.5",
+      "Log BF = 0.64 at standardized effect size 0.5",
       ""
     )
   )
   testthat::expect_error(plot(fit), "Bayes factor function can be plotted only if a specific omega/tau2 is not user set")
 
-  # # TODO: fix posterior plots
-  # # - I fixed the arguments not being properly passed
-  # # - however, the posterior distribution does not integrate to 1
-  # # (I remember that I raised this issue when I was in US, and Saptati was working on fixing it)
-  #
-  # # this is how the functions should work
+  # TODO: fix posterior plots
+  # - I fixed the arguments not being properly passed
+  # - however, the posterior distribution does not integrate to 1
+  # (I remember that I raised this issue when I was in US, and Saptati was working on fixing it)
+
+  # this is how the functions should work
   # posterior_plot(fit)
   # posterior_plot(fit, prior = TRUE)
   #
@@ -58,19 +58,18 @@ test_that("two-sample: basic functionality", {
   #
   # # vdiffr::expect_doppelganger("t_test-two_sample-two_sided-posterior",           posterior_plot(fit))
   # # vdiffr::expect_doppelganger("t_test-two_sample-two_sided-posterior_and_prior", posterior_plot(fit, prior = TRUE))
+  #
 
-
-  ### test fixed omega -- non-local prior regression test (one-sided, also set r)
-  fit <- regression_test_BFF(
-    t_stat = 1.5,
+  ### test fixed omega -- non-local prior t-test (one-sided)
+  fit <- t_test_BFF_invm(
+    t_stat = 2.5,
     alternative = "greater",
-    n = 50,
-    k = 2,
-    r = 3,
+    n1 = 50,
+    n2 = 50,
     omega = 0.5)
 
   # check that the BF and omega is consistent
-  testthat::expect_equal(fit$log_bf_h1, -0.27897, tolerance = 1e-4)
+  testthat::expect_equal(fit$log_bf_h1, 0.6384044, tolerance = 1e-5)
   testthat::expect_equal(fit$omega_h1,  0.50)
 
   # test S3 methods
@@ -78,9 +77,9 @@ test_that("two-sample: basic functionality", {
     testthat::capture_output_lines(fit, print = TRUE, width = 100),
     c(
       "",
-      "\tBayes Factor Test With Non-Local Priors For A Regression Test",
+      "\tBayes Factor Test With Non-Local Priors For A Two-Sample t-Test",
       "",
-      "Log BF = -0.28 at standardized effect size 0.5",
+      "Log BF = 0.64 at standardized effect size 0.5",
       ""
     )
   )
@@ -88,27 +87,26 @@ test_that("two-sample: basic functionality", {
   # vdiffr::expect_doppelganger("t_test-two_sample-one_sided-posterior_and_prior", posterior_plot(fit, prior = TRUE))
 
 
-  ### test unspecified omega -- BFF (one-sided; also change n and k)
-  fit <- regression_test_BFF(
+  ### test unspecified omega -- BFF (one-sided; also change n1/n2)
+  fit <- t_test_BFF_invm(
     t_stat = 0.5,
     alternative = "two.sided",
-    n = 25,
-    k = 1)
+    n1 = 25,
+    n2 = 75)
 
   # check that the BF and omega is consistent
-  testthat::expect_equal(fit$log_bf_h1, 0.03282, tolerance = 1e-5)
-  testthat::expect_equal(fit$omega_h1,  0.05)
+  testthat::expect_equal(fit$log_bf_h1, 0.0, tolerance = 1e-2)
+  testthat::expect_equal(fit$omega_h1,  0.00)
 
   # test S3 methods
   testthat::expect_equal(
     testthat::capture_output_lines(fit, print = TRUE, width = 100),
     c(
       "",
-      "\tBayes Factor Test With Non-Local Priors For A Regression Test"  ,
-      ""                                        ,
-      "The log BF is maximized in favor of the alternative hypothesis at the standardized effect size of 0.05 with value 0.03. Standardized effect size should be chosen for individual hypotheses based on scientific intent and plausibilty.",
+      "\tBayes Factor Test With Non-Local Priors For A Two-Sample t-Test"  ,
       "",
-      "The BF switches from providing evidence for the alternative hypothesis to evidence for the null hypothesis at the standardized effect size of 0.1",
+      "",
+      "The BF provides evidence for the null hypothesis across all standardized effect sizes",
       ""
     )
   )
@@ -124,30 +122,29 @@ test_that("two-sample: basic functionality", {
   # testthat::expect_equal(colnames(no_plot_plot), c("x", "prior", "posterior"))
 
   ### test unspecified omega -- BFF (one-sided, also set r)
-  fit <- regression_test_BFF(
+  fit <- t_test_BFF_invm(
     t_stat = 0.5,
     alternative = "less",
-    r = 3,
-    n = 50,
-    k = 4)
+    n1 = 50,
+    n2 = 50)
 
   # check that the BF and omega is consistent
-  testthat::expect_equal(fit$log_bf_h1, 0.0, tolerance = 1e-5)
-  testthat::expect_equal(fit$omega_h1,  0.0)
+  testthat::expect_equal(fit$log_bf_h1, 0.00, tolerance = 1e-5)
+  testthat::expect_equal(fit$omega_h1,  0.00)
 
   # test S3 methods
   testthat::expect_equal(
-    testthat::capture_output_lines(summary(fit), print = TRUE, width = 100),
+    testthat::capture_output_lines(fit, print = TRUE, width = 100),
     c(
       "",
-      "\tBayes Factor Test With Non-Local Priors For A Regression Test",
+      "\tBayes Factor Test With Non-Local Priors For A Two-Sample t-Test"  ,
       "",
       "",
       "The BF provides evidence for the null hypothesis across all standardized effect sizes",
       ""
     )
   )
-  # vdiffr::expect_doppelganger("regression_test_BFF-two_sample-one_sided-BFF", plot(fit))
+  # vdiffr::expect_doppelganger("t_test_BFF-two_sample-one_sided-BFF", plot(fit))
   # testthat::expect_error(posterior_plot(fit), "There is no non-local prior distribution")
 })
 

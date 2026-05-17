@@ -16,11 +16,11 @@ test_that("two-sample: basic functionality", {
   testthat::expect_equal(
     testthat::capture_output_lines(fit, print = TRUE, width = 100),
     c(
-    "\tBayesian non-local two-sample t test"  ,
-    ""                                        ,
-    "log Bayes factor = 1.92"                 ,
-    "omega = 0.50 (Cohen's d)"                ,
-    "alternative = two.sided"
+      "",
+      "\tBayes Factor Test With Non-Local Priors For A Two-Sample t-Test",
+      "",
+      "Log BF = 1.92 at standardized effect size 0.5",
+      ""
     )
   )
   testthat::expect_error(plot(fit), "Bayes factor function can be plotted only if a specific omega/tau2 is not user set")
@@ -77,11 +77,11 @@ test_that("two-sample: basic functionality", {
   testthat::expect_equal(
     testthat::capture_output_lines(fit, print = TRUE, width = 100),
     c(
-      "\tBayesian non-local two-sample t test"  ,
-      ""                                        ,
-      "log Bayes factor = 2.77"                 ,
-      "omega = 0.50 (Cohen's d)"                ,
-      "alternative = greater"
+      "",
+      "\tBayes Factor Test With Non-Local Priors For A Two-Sample t-Test",
+      "",
+      "Log BF = 2.77 at standardized effect size 0.5",
+      ""
     )
   )
   # vdiffr::expect_doppelganger("t_test-two_sample-one_sided-posterior",           posterior_plot(fit))
@@ -103,13 +103,12 @@ test_that("two-sample: basic functionality", {
   testthat::expect_equal(
     testthat::capture_output_lines(fit, print = TRUE, width = 100),
     c(
-      "\tBayesian non-local two-sample t test"  ,
-      ""                                        ,
-      "maximized (in favor of alternative) log Bayes factor = 0.00",
-      "maximized (in favor of alternative) omega = 0.00 (Cohen's d)",
-      "minimized (in favor of null for medium/large effect sizes) log Bayes factor = -3.19",
-      "minimized (in favor of null for medium/large effect sizes) omega = 1.00 (Cohen's d)",
-      "alternative = two.sided"
+      "",
+      "\tBayes Factor Test With Non-Local Priors For A Two-Sample t-Test"  ,
+      "",
+      "",
+      "The BF provides evidence for the null hypothesis across all standardized effect sizes",
+      ""
     )
   )
   # vdiffr::expect_doppelganger("t_test_BFF-two_sample-two_sided-BFF",                 plot(fit))
@@ -137,15 +136,14 @@ test_that("two-sample: basic functionality", {
 
   # test S3 methods
   testthat::expect_equal(
-    testthat::capture_output_lines(summary(fit), print = TRUE, width = 100),
+    testthat::capture_output_lines(fit, print = TRUE, width = 100),
     c(
-      "\tBayesian non-local two-sample t test",
-      ""                                        ,
-      "maximized (in favor of alternative) log Bayes factor = 0.00",
-      "maximized (in favor of alternative) omega = 0.00 (Cohen's d)",
-      "minimized (in favor of null for medium/large effect sizes) log Bayes factor = -6.85",
-      "minimized (in favor of null for medium/large effect sizes) omega = 1.00 (Cohen's d)",
-      "alternative = less"
+      "",
+      "\tBayes Factor Test With Non-Local Priors For A Two-Sample t-Test"  ,
+      "",
+      "",
+      "The BF provides evidence for the null hypothesis across all standardized effect sizes",
+      ""
     )
   )
   # vdiffr::expect_doppelganger("t_test_BFF-two_sample-one_sided-BFF", plot(fit))

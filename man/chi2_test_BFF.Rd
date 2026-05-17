@@ -10,7 +10,7 @@ chi2_test_BFF(
   df,
   LRT = FALSE,
   omega = NULL,
-  omega_sequence = if (is.null(omega)) seq(0.01, 1, by = 0.01),
+  omega_sequence = if (is.null(omega)) seq(0.01, 3, by = 0.01),
   r = 1
 )
 }
@@ -38,7 +38,7 @@ By setting r > 1, we use higher-order moments for replicated studies. Fractional
 All results are on the log scale.
 }
 \examples{
-chi2BFF = chi2_test_BFF(chi2_stat = 6.5, n = 10, df = 9)
+chi2BFF = chi2_test_BFF(chi2_stat = 2.5^2, n = 10, df = 1)
 chi2BFF
 plot(chi2BFF)
 
